@@ -1,119 +1,37 @@
-const mdata =  require('/home/mamatha/ipldrill/src/data/matches.json');
-const ddata = require('/home/mamatha/ipldrill/src/data/deliveries.json');
-function noOfMatches ()
-{
-const obj = {};
-for (let i = 0; i < ddata.length; i++) { 
-    let first = ddata[i]['season'];  
-    if (obj[first]) {
-        obj[first]++;
-    }
-    else {
-        obj[first] = 1;
-    }
+const {matchesPerYear,
+    matchesWonPerTeamPerYear,
+    extraRunsConcededPerTeamIn2016,
+    Top10EconomicalBowlersIn2015} = require('./ipl.js');
+// storing csv file in the csvFilepath1
+const csvFilePath1 = '/home/mamatha/ipldrill/src/data/matches.csv';
+const csvFilePath2 = '/home/mamatha/ipldrill/src/data/deliveries.csv';
+const csvToJsonFile = require('csvtojson');
+//converting csv file to json file
+//storing filesystem in the fs variable
+const fs = require('fs');
+//writing output in the specified path
+const resultObjToFile = (resultfilepath,resultObj)=> {
+fs.writeFile(resultfilepath,resultObj, 'utf8', function (err) {
+    if (err) {
+        console.log("An error occured while writing JSON Object to File.");
+        return console.log(err);
+    }   
+   console.log("JSON file saved.");
+    });
 }
-return obj;
-}
-function noOfMatchesPerTeam()
-{    
-let obj1 = {};
- ddata.forEach((Object) => {
- if (obj1[Object.season] == undefined) {
-        obj1[Object.season] = {};
-} if (obj1[Object.season][Object.winner] == undefined) {
-    obj1[Object.season][Object.winner] = 1;
-} else {
-    obj1[Object.season][Object.winner]++;
- }
-} );
- return obj1;
-}
-function extraRunsPerTeam(ddata , mdata) {
-    let ids = [];
-    let obj2 = {};
-    ddata.forEach((Object) => { 
-        if (Object.season === 2016) {
-            ids.push(Object.id)
-        } 
+csvToJsonFile().fromFile(csvFilePath1).then((matches)=>{  
+const matchesres = JSON.stringify(matchesPerYear(matches))
+//declaring outpath and storing output in the variable
+resultObjToFile("/home/mamatha/ipldrill/src/output/matchesPerYear.json",matchesres)    
+const matchesWon = JSON.stringify(matchesWonPerTeamPerYear(matches))
+resultObjToFile("/home/mamatha/ipldrill/src/output/matchesWon.json",matchesWon)  
+csvToJsonFile().fromFile(csvFilePath2).then((deliveries)=>{  
+const extraRunsConceded = JSON.stringify(extraRunsConcededPerTeamIn2016(matches,deliveries))
+resultObjToFile("/home/mamatha/ipldrill/src/output/extraRnsConceded.json", extraRunsConceded)   
+const bowlersEconomy = JSON.stringify(Top10EconomicalBowlersIn2015(matches,deliveries))
+resultObjToFile("/home/mamatha/ipldrill/src/output/bowlersEconomy.json",bowlersEconomy)
+   // console.log(bowlersEconomy) 
+ })
+})
 
-    } )
-    ids.forEach((i) => {
-        mdata.forEach((m) => {
-            if (m.match_id == i) {
-                if(obj2[m.bowling_team]) {
-                    let t = m.bowling_team;
-                    let extra = parseInt(m.extra_runs);
-                    obj2[t] += extra;
-                } else {
-                    t = m.bowling_team;
-                    extra = parseInt(m.extra_runs);
-                    obj2[t] = extra;
-                }
-            }
-        } )
-    } ) 
-    return obj2;
-}
-function econimicalBowlers(ddata,mdata) {
-    const ids = [];
-    const result = {};
-    ddata.forEach((obj) => {
-        if (obj.season === 2015) {
-           ids.push(obj.id);
-    }
-} ) 
-console.log(ids);
-    ids.forEach((i) => { 
-        mdata.forEach((obj) => {
-            if(obj.match_id === i) {
-            //x = obj.bowler;
-            //console.log(x);
-            if (result[obj.bowler] === undefined) {
-                result[obj.bowler] = {};
-                if (obj.wide_runs != 0 || obj.noball_runs != 0) {
-                    result[obj.bowler].balls = 0;
-                    totalruns = parseInt(obj.total_runs) - parseInt(obj.legbye_runs) - parseInt(obj.bye_runs);
-                    result[obj.bowler].runs =  totalruns;
-                    //console.log(totalruns);
-                } else {
-                    result[obj.bowler].balls = 1;
-                    totalruns = parseInt(obj.total_runs) - parseInt(obj.legbye_runs) - parseInt(obj.bye_runs);
-                    result[obj.bowler].runs = totalruns;
-                    //console.log(totalruns);
-                }
-            } else {
-                    if (obj.wide_runs != 0 || obj.noball_runs != 0) {
-                       totalruns = parseInt(obj.total_runs) - parseInt(obj.legbye_runs) - parseInt(obj.bye_runs);
-                       result[obj.bowler].runs =  result[obj.bowler].runs+totalruns;
-                       //console.log(result);
-                    } else {
-                         result[obj.bowler].balls++;
-                         totalruns = parseInt(obj.total_runs) - parseInt(obj.legbye_runs) - parseInt(obj.bye_runs);
-                         result[obj.bowler].runs = result[obj.bowler].runs+totalruns;
-                         //console.log(result);
-                     }
-                 }                  
-            }
-            } )
-        } )
-    //console.log(result);
-    const array = [];
-    const res = Object.keys(result);
-    const res1 = Object.values(result);
-    for (let i = 0; i < res.length; i++) {
-        array[i] = [];
-        array[i].push(res[i]);
-        balls = res1[i].balls;
-        runs =  res1[i].runs;
-        let b = balls / 6;
-        let r = runs / b;
-        array[i].push(r);
-    } 
-    array.sort((a,b) => a[1] - b[1]);
-    return array.slice(0,9);
 
-}
-console.log(noOfMatches(ddata));
-console.log(noOfMatchesPerTeam(ddata));
-console.log(extraRunsPerTeam(ddata,mdata));
-console.log(econimicalBowlers(ddata,mdata));
